@@ -15,9 +15,11 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String content;
+    private String sentiment;
     private Long likes;
     @ManyToOne
     @JsonBackReference
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
 }

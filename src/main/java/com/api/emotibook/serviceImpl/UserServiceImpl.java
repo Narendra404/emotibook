@@ -20,6 +20,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(User user) {
+        if(userRepository.findUserByEmail(user.getEmail()) != null) {
+            throw new RuntimeException("Email already exists");
+        }
         return userRepository.save(user);
     }
 
@@ -37,7 +40,6 @@ public class UserServiceImpl implements UserService {
     public User updateUser(Long id, User newUser) {
         return userRepository.findById(id).map(user -> {
             user.setName(newUser.getName());
-            user.setEmail(newUser.getEmail());
             user.setPassword(newUser.getPassword());
             return userRepository.save(user);
         }

@@ -2,7 +2,6 @@ package com.api.emotibook.controller;
 
 import com.api.emotibook.exception.UserNotFoundException;
 import com.api.emotibook.model.User;
-import com.api.emotibook.serviceImpl.GeminiService;
 import com.api.emotibook.serviceImpl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -14,12 +13,10 @@ import java.util.List;
 public class UserController {
 
     private final UserServiceImpl userServiceImpl;
-    private final GeminiService geminiService;
 
     @Autowired
-    public UserController(UserServiceImpl userServiceImpl, GeminiService geminiService) {
+    public UserController(UserServiceImpl userServiceImpl) {
         this.userServiceImpl = userServiceImpl;
-        this.geminiService = geminiService;
     }
 
     @PostMapping("/user")
@@ -61,8 +58,4 @@ public class UserController {
 
     }
 
-    @PostMapping("user/gemini")
-    String getGemini(@RequestBody String text) {
-        return geminiService.generateContent(text);
-    }
 }
