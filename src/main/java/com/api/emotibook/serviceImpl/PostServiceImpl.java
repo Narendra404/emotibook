@@ -14,18 +14,18 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final TokenizationService tokenizationService;
+    private final SentimentService sentimentService;
 
     @Autowired
-    public PostServiceImpl(PostRepository postRepository, UserRepository userRepository, TokenizationService tokenizationService) {
+    public PostServiceImpl(PostRepository postRepository, UserRepository userRepository, SentimentService sentimentService) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
-        this.tokenizationService = tokenizationService;
+        this.sentimentService = sentimentService;
     }
 
     @Override
     public Post createPost(Post post) {
-        String sentiment = tokenizationService.tokenizeText(post.getContent());
+        String sentiment = sentimentService.tokenizeText(post.getContent());
         post.setSentiment(sentiment);
         return postRepository.save(post);
     }
