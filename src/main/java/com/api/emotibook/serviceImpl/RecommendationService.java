@@ -1,50 +1,95 @@
 package com.api.emotibook.serviceImpl;
 
 import com.api.emotibook.model.Post;
-import com.api.emotibook.model.User;
+import com.api.emotibook.model.Rating;
 import com.api.emotibook.repository.PostRepository;
-import com.api.emotibook.repository.UserRepository;
+import com.api.emotibook.repository.RatingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-    @Service
-    public class RecommendationService {
+@Service
+public class RecommendationService {
 
-        private final UserRepository userRepository;
-        private final PostRepository postRepository;
+    private final RatingRepository ratingRepository;
+    private final PostRepository postRepository;
 
-        @Autowired
-        public RecommendationService(UserRepository userRepository, PostRepository postRepository) {
-            this.userRepository = userRepository;
-            this.postRepository = postRepository;
-        }
+    @Autowired
+    public RecommendationService(RatingRepository ratingRepository, PostRepository postRepository) {
+        this.ratingRepository = ratingRepository;
+        this.postRepository = postRepository;
+    }
 
-        public Map<String, Double> getRecommendations(Long userId) {
-            Map<String, Double> recommendations = new HashMap<>();
+    public List<Post> recommendPosts(Long userId) {
+        // Get all ratings given by the user
+        List<Rating> userRatings = ratingRepository.findByUserId(userId);
 
-            // Get the user's posts and sentiment scores
-            User user = userRepository.findById(userId).orElse(null);
-            if (user != null) {
-                for (Post post : user.getPosts()) {
-                    // Use sentiment score of each post to calculate recommendations
-                    Map<String, Double> postRecommendations = calculatePostRecommendations(post);
-                    recommendations.putAll(postRecommendations);
+        // Calculate recommendations using Slope One algorithm
+        Map<Long, Double> recommendations = calculateRecommendations(userRatings);
+
+        // Get top recommended posts
+        List<Long> recommendedPostIds = getTopRecommendedPostIds(recommendations);
+
+        // Retrieve recommended posts from the database
+        return postRepository.findAllById(recommendedPostIds);
+    }
+
+    private Map<Long, Double> calculateRecommendations(List<Rating> userRatings) {
+        Map<Long, Map<Long, Integer>> frequencyMatrix = new HashMap<>();
+        Map<Long, Map<Long, Double>> deviationMatrix = new HashMap<>();
+
+        // Step 1: Calculate deviations and frequencies
+        for (Rating rating : userRatings) {
+            Long userId = rating.getId();
+            Long postId = rating.getPost().getId();
+            int score = rating.getSentimentScore();
+
+            for (Rating otherRating : ratingRepository.findByPostId(postId)) {
+                Long otherUserId = otherRating.getUser().getId();
+                Long otherPostId = otherRating.getPost().getId();
+                int otherScore = otherRating.getSentimentScore();
+
+                if (!userId.equals(otherUserId)) {
+                    frequencyMatrix.putIfAbsent(userId, new HashMap<>());
+                    frequencyMatrix.get(userId).putIfAbsent(otherUserId, 0);
+                    frequencyMatrix.get(userId).put(otherUserId, frequencyMatrix.get(userId).get(otherUserId) + 1);
+
+                    deviationMatrix.putIfAbsent(userId, new HashMap<>());
+                    deviationMatrix.get(userId).putIfAbsent(otherUserId, 0.0);
+                    deviationMatrix.get(userId).put(otherUserId,
+                            deviationMatrix.get(userId).get(otherUserId) + (score - otherScore));
                 }
             }
-
-            return recommendations;
         }
 
-        private Map<String, Double> calculatePostRecommendations(Post post) {
-            // Implement Slope One algorithm or any other recommendation algorithm here
-            // For demonstration purposes, let's return hardcoded recommendations
-            Map<String, Double> recommendations = new HashMap<>();
-            recommendations.put("recommended_item1", 4.5);
-            recommendations.put("recommended_item2", 4.0);
-            recommendations.put("recommended_item3", 3.5);
-            return recommendations;
+        // Step 2: Calculate recommendations
+        Map<Long, Double> recommendations = new HashMap<>();
+        for (Map.Entry<Long, Map<Long, Double>> entry : deviationMatrix.entrySet()) {
+            Long userId = entry.getKey();
+            Map<Long, Double> userDeviations = entry.getValue();
+
+            for (Map.Entry<Long, Double> devEntry : userDeviations.entrySet()) {
+                Long otherUserId = devEntry.getKey();
+                Double deviationSum = devEntry.getValue();
+                int frequency = frequencyMatrix.get(userId).get(otherUserId);
+
+                double recommendation = deviationSum / frequency;
+                recommendations.put(otherUserId, recommendations.getOrDefault(otherUserId, 0.0) + recommendation);
+            }
         }
+
+        return recommendations;
     }
+
+    private List<Long> getTopRecommendedPostIds(Map<Long, Double> recommendations) {
+        // Sort recommendations and get top recommended post IDs
+        // This step depends on how you want to sort and filter recommendations
+        // For example, you could select top N recommendations or apply a threshold
+        // Here, we'll just return all recommended user IDs
+        return new ArrayList<>(recommendations.keySet());
+    }
+}
