@@ -8,7 +8,7 @@ This Spring Boot project provides the backend functionality for managing posts, 
 
 - Post: Represents posts made by users.
 - User: Represents users of the Emotibook application.
-- Rating: Represents sentiment ratings provided by users for posts.
+- Rating: Represents the interaction between users and posts.
 
 ## Technologies Used
 
@@ -30,7 +30,7 @@ This Spring Boot project provides the backend functionality for managing posts, 
 2. Navigate to the project directory:
 
     ```bash
-    cd emotibook-backend
+    cd emotibook
     ```
 
 3. Build the project using Maven:
@@ -41,7 +41,6 @@ This Spring Boot project provides the backend functionality for managing posts, 
 
 4. Configure the application properties:
 
-    - Rename `application-example.properties` to `application.properties`.
     - Update the database connection properties (`spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password`, etc.) as per your environment.
     - Ensure that your MySQL server is up and running.
 
