@@ -38,12 +38,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(Long id, User newUser) {
-        return userRepository.findById(id).map(user -> {
+        User user = userRepository.findById(id).orElse(null);
+        if(user != null) {
             user.setName(newUser.getName());
+            user.setEmail(newUser.getEmail());
             user.setPassword(newUser.getPassword());
             return userRepository.save(user);
         }
-        ).orElse(null);
+        return null;
     }
 
     @Override
